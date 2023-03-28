@@ -1,0 +1,94 @@
+---
+title: "Vaccines by State"
+author: "Alicia"
+date: "2023-02-28"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(pacman, tidyverse, rio, tibble, tsibble, highcharter, tidyr, lubridate, ggplot2, readr, readxl, plotly)
+Immunizations <- read_csv("~/Downloads/immunizations.csv")
+Conditions <- read_csv("~/Downloads/conditions.csv")
+Patients <- read_csv("~/Downloads/patients.csv")
+Patient_Data_by_Region <- read_excel("~/OneDrive - University of Arkansas/Patient Data by Region.xlsx")
+##View(Patient_Data_by_Region)
+```
+
+```{r}
+#Changing Patient Column to ID
+colnames(Conditions)[3] = "Id"
+colnames(Immunizations)[2] = "Id"
+
+Covidpatients <- Conditions[Conditions$DESCRIPTION == 'COVID-19',]
+
+ModernaVaccine <- Immunizations[Immunizations$CODE == 207,]
+PfizerVaccine <- Immunizations[Immunizations$CODE == 208,]
+JanssenVaccine <- Immunizations[Immunizations$CODE == 212,]
+
+ArkansasPatients <- Patients[Patients$STATE == 'Arkansas',]
+CaliforniaPatients <- Patients[Patients$STATE == 'California',]
+NewYorkPatients <- Patients[Patients$STATE == 'NewYork',]
+```
+
+
+
+```{r}
+CovidDF<- merge(Covidpatients, Immunizations, by="Id")
+##view(CovidDF)
+VACType <- filter(CovidDF, CODE.y == 207 | CODE.y == 208 | CODE.y == 212) 
+
+PatientStates <- filter(Patients, STATE == 'Arkansas' | STATE == 'California' | STATE == 'New York') 
+
+CovidPatientDf <- merge(VACType, PatientStates, by="Id") 
+##%>% view()
+```
+
+```{r}
+CVac <- filter(Immunizations, CODE == 207 | CODE == 208 | CODE == 212) 
+VaccPatients <- merge(CVac, Patients, by="Id") 
+```
+
+
+```{r}
+Df1 <- merge(VaccPatients, PatientStates, by="Id")
+```
+
+```{r}
+colnames(Df1)
+```
+
+```{r}
+ggplot(CovidPatientDf, aes(x = CODE.y, color = RACE, fill = RACE))+ 
+  geom_bar() +
+  xlab("Vaccine Type") +
+  ggtitle("Count of Vaccine Types by Race")
+```
+It seems as though the distribution of people who got each vaccine by race stays roughly the same per type of vaccine. From this chart we can see that majority of people got the Pfizer vaccine, and that there are far more white people represented. 
+
+```{r}
+ggplot(VaccPatients, aes(x = STATE, color = CODE, fill=CODE)) + 
+                    geom_bar() 
+```
+
+```{r}
+ggplot(CovidPatientDf, aes(x = STATE)) + 
+                  geom_bar() + 
+                  geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white")
+```
+
+```{r}
+VaccPatients %>%
+ ggplot(aes(CODE, INCOME, color = INCOME, fill = INCOME)) +
+ geom_point() +
+ geom_jitter() +
+ geom_smooth() +
+  xlab("Vaccine Type") +
+  ylab("Income") +
+  ggtitle("Distribution of Vaccine Types Based on Income")
+```
+From this graph we can see that the highest distribution of people who got the J&J vaccine are lower income. Whereas we see that the highest density of the population with the highest income got the Pfizer vaccine. In general, J&J has the fewest people.
+
+
+
